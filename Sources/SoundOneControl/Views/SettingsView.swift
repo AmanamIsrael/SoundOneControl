@@ -184,7 +184,8 @@ private struct LevelControl: View {
         ForEach(1...5, id: \.self) { Text("\($0)").tag($0) }
       }
       .labelsHidden()
-      .frame(width: 90)
+      .fixedSize()
+      .frame(width: 90, alignment: .trailing)
     }
   }
 }

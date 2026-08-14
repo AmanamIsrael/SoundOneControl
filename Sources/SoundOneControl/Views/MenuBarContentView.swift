@@ -5,6 +5,7 @@ struct MenuBarContentView: View {
   @ObservedObject var controller: HeadphoneController
   let openSettings: () -> Void
   @EnvironmentObject private var preferences: AppPreferences
+  private let valueColumnWidth: CGFloat = 174
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
@@ -89,7 +90,8 @@ struct MenuBarContentView: View {
             }
           }
           .labelsHidden()
-          .frame(width: 120)
+          .fixedSize()
+          .frame(width: valueColumnWidth, alignment: .trailing)
         }
         controlDivider
 
@@ -130,7 +132,8 @@ struct MenuBarContentView: View {
           }
         }
         .labelsHidden()
-        .frame(width: 174)
+        .fixedSize()
+        .frame(width: valueColumnWidth, alignment: .trailing)
       }
       controlDivider
 
@@ -175,7 +178,8 @@ struct MenuBarContentView: View {
         }
       }
       .labelsHidden()
-      .frame(width: 120)
+      .fixedSize()
+      .frame(width: valueColumnWidth, alignment: .trailing)
     }
   }
 

@@ -14,15 +14,14 @@ struct SettingsView: View {
       }
       .listStyle(.sidebar)
       .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
-      .navigationTitle("Settings")
     } detail: {
       VStack(spacing: 0) {
-        SettingsDetailHeader(pane: selection, state: controller.state)
+        SettingsPageHeader(pane: selection)
         Divider()
         selectedSettingsView
       }
     }
-    .navigationSplitViewStyle(.balanced)
+    .navigationSplitViewStyle(.prominentDetail)
     .frame(minWidth: 680, minHeight: 500)
   }
 
@@ -40,6 +39,24 @@ struct SettingsView: View {
       AppSettingsView(controller: controller)
         .environmentObject(preferences)
     }
+  }
+}
+
+private struct SettingsPageHeader: View {
+  let pane: SettingsPane
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 0) {
+      Text(pane.title)
+        .font(.headline)
+      Text(pane.subtitle)
+        .font(.caption)
+        .foregroundStyle(.secondary)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(.horizontal, 30)
+    .padding(.vertical, 10)
+    .accessibilityElement(children: .combine)
   }
 }
 
@@ -76,40 +93,6 @@ private enum SettingsPane: String, CaseIterable, Identifiable {
     case .headphones: "headphones"
     case .app: "gearshape"
     }
-  }
-}
-
-private struct SettingsDetailHeader: View {
-  let pane: SettingsPane
-  let state: SpaceOneProState?
-
-  var body: some View {
-    HStack(spacing: 12) {
-      Image(systemName: pane.symbol)
-        .font(.title2)
-        .foregroundStyle(.tint)
-        .frame(width: 36, height: 36)
-        .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 9))
-
-      VStack(alignment: .leading, spacing: 2) {
-        Text(pane.title)
-          .font(.headline)
-        Text(pane.subtitle)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-      }
-
-      Spacer()
-
-      if let state {
-        Label("\(state.batteryPercent)%", systemImage: "battery.75percent")
-          .font(.callout.monospacedDigit())
-          .foregroundStyle(.secondary)
-          .accessibilityLabel("Headphone battery \(state.batteryPercent) percent")
-      }
-    }
-    .padding(.horizontal, 20)
-    .padding(.vertical, 14)
   }
 }
 

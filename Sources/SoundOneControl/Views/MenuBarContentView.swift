@@ -33,7 +33,7 @@ struct MenuBarContentView: View {
         .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
 
       VStack(alignment: .leading, spacing: 2) {
-        Text("Space One Pro")
+        Text("Soundcore Space One Pro")
           .font(.headline)
         Text(connectionSubtitle)
           .font(.caption)
@@ -134,15 +134,18 @@ struct MenuBarContentView: View {
       }
       controlDivider
 
-      Toggle(
-        "Dolby Audio",
-        isOn: Binding(
-          get: { state.dolbyAudio },
-          set: controller.setDolby
+      controlRow("Dolby Audio") {
+        Toggle(
+          "Dolby Audio",
+          isOn: Binding(
+            get: { state.dolbyAudio },
+            set: controller.setDolby
+          )
         )
-      )
-      .toggleStyle(.switch)
-      .padding(.vertical, 10)
+        .labelsHidden()
+        .toggleStyle(.switch)
+        .accessibilityLabel("Dolby Audio")
+      }
     }
     .padding(.horizontal, 12)
     .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))

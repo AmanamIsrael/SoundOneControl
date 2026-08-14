@@ -4,7 +4,7 @@ An unofficial, native macOS menu-bar controller for Soundcore Space One Pro (A30
 
 SoundOne Control talks directly to the headphones over Bluetooth. It is local-only, has no telemetry, and does not require the Soundcore phone app after the headphones have been paired once.
 
-![SoundOne Control showing noise-canceling and listening-effect controls](docs/images/soundone-control.png)
+![SoundOne Control settings showing ambient-sound and listening-effect controls](docs/images/soundone-control.png)
 
 ## Features
 

@@ -125,7 +125,9 @@ final class HeadphoneController: ObservableObject {
   func setMultipoint(_ enabled: Bool) {
     mutate(
       { $0.multipointEnabled = enabled },
-      command: { SpaceOneProCommands.multipoint($0.multipointEnabled) })
+      command: { SpaceOneProCommands.multipoint($0.multipointEnabled) },
+      refreshesMultipointDevices: true
+    )
   }
 
   func setMultipointDevice(_ device: MultipointDevice, connected: Bool) {
@@ -263,7 +265,7 @@ final class HeadphoneController: ObservableObject {
     }
   }
 
-  private func refreshState() async {
+  private func refreshState(refreshesMultipointDevices: Bool = true) async {
     do {
       let response = try await transport.send(SpaceOneProCommands.requestState)
       let newState = try SpaceOneProState(packet: response)
@@ -273,10 +275,10 @@ final class HeadphoneController: ObservableObject {
       }
       connectionState = .connected
       notifications.checkLowBattery(newState.batteryPercent)
-      if newState.multipointEnabled {
-        await refreshMultipointDevices()
-      } else {
+      if !newState.multipointEnabled {
         multipointDevices = []
+      } else if refreshesMultipointDevices {
+        await refreshMultipointDevices()
       }
     } catch {
       connectionState = .error(error.localizedDescription)
@@ -285,7 +287,8 @@ final class HeadphoneController: ObservableObject {
 
   private func mutate(
     _ update: @escaping (inout SpaceOneProState) -> Void,
-    command: @escaping (SpaceOneProState) -> SoundcorePacket
+    command: @escaping (SpaceOneProState) -> SoundcorePacket,
+    refreshesMultipointDevices: Bool = false
   ) {
     guard var target = state, !isApplyingChange else { return }
     update(&target)
@@ -296,7 +299,7 @@ final class HeadphoneController: ObservableObject {
     Task {
       do {
         _ = try await transport.send(command(target))
-        await refreshState()
+        await refreshState(refreshesMultipointDevices: refreshesMultipointDevices)
       } catch {
         state = previous
         connectionState = .error(error.localizedDescription)

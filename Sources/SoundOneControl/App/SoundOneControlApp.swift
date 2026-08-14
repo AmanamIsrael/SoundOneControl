@@ -105,6 +105,9 @@ private final class StatusItemCoordinator: NSObject {
         defer: false
       )
       window.title = "SoundOne Control Settings"
+      window.titleVisibility = .hidden
+      window.titlebarAppearsTransparent = true
+      window.toolbarStyle = .unified
       window.minSize = NSSize(width: 680, height: 500)
       window.setFrameAutosaveName("SoundOneControlSettings")
       window.isReleasedWhenClosed = false

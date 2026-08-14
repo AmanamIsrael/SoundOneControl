@@ -5,6 +5,7 @@ struct MenuBarContentView: View {
   @ObservedObject var controller: HeadphoneController
   let openSettings: () -> Void
   @EnvironmentObject private var preferences: AppPreferences
+  private let valueColumnWidth: CGFloat = 174
 
   var body: some View {
     VStack(alignment: .leading, spacing: 16) {
@@ -33,7 +34,7 @@ struct MenuBarContentView: View {
         .background(.tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
 
       VStack(alignment: .leading, spacing: 2) {
-        Text("Space One Pro")
+        Text("Soundcore Space One Pro")
           .font(.headline)
         Text(connectionSubtitle)
           .font(.caption)
@@ -89,7 +90,8 @@ struct MenuBarContentView: View {
             }
           }
           .labelsHidden()
-          .frame(width: 120)
+          .fixedSize()
+          .frame(width: valueColumnWidth, alignment: .trailing)
         }
         controlDivider
 
@@ -130,19 +132,23 @@ struct MenuBarContentView: View {
           }
         }
         .labelsHidden()
-        .frame(width: 174)
+        .fixedSize()
+        .frame(width: valueColumnWidth, alignment: .trailing)
       }
       controlDivider
 
-      Toggle(
-        "Dolby Audio",
-        isOn: Binding(
-          get: { state.dolbyAudio },
-          set: controller.setDolby
+      controlRow("Dolby Audio") {
+        Toggle(
+          "Dolby Audio",
+          isOn: Binding(
+            get: { state.dolbyAudio },
+            set: controller.setDolby
+          )
         )
-      )
-      .toggleStyle(.switch)
-      .padding(.vertical, 10)
+        .labelsHidden()
+        .toggleStyle(.switch)
+        .accessibilityLabel("Dolby Audio")
+      }
     }
     .padding(.horizontal, 12)
     .background(Color(nsColor: .controlBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
@@ -172,7 +178,8 @@ struct MenuBarContentView: View {
         }
       }
       .labelsHidden()
-      .frame(width: 120)
+      .fixedSize()
+      .frame(width: valueColumnWidth, alignment: .trailing)
     }
   }
 

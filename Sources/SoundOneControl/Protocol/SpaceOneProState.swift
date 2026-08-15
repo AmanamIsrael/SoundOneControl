@@ -80,13 +80,14 @@ struct SoundModes: Equatable, Sendable {
   var windNoiseReduction: Bool
 
   init(bytes: ArraySlice<UInt8>) {
-    ambient = AmbientMode(rawValue: bytes[bytes.startIndex]) ?? .normal
-    let combinedLevels = bytes[bytes.startIndex + 1]
+    let base = bytes.startIndex
+    ambient = AmbientMode(rawValue: bytes[base]) ?? .normal
+    let combinedLevels = bytes[base + 1]
     customNoiseCancelingLevel = Int(combinedLevels >> 4).clamped(to: 1...5)
     adaptiveNoiseCancelingLevel = Int(combinedLevels & 0x0f).clamped(to: 1...5)
-    noiseCancelingMode = NoiseCancelingMode(rawValue: bytes[bytes.startIndex + 3]) ?? .custom
-    windNoiseReduction = bytes[bytes.startIndex + 4] == 1
-    transparencyLevel = Int(bytes[bytes.startIndex + 5]).clamped(to: 1...5)
+    noiseCancelingMode = NoiseCancelingMode(rawValue: bytes[base + 3]) ?? .custom
+    windNoiseReduction = bytes[base + 4] == 1
+    transparencyLevel = Int(bytes[base + 5]).clamped(to: 1...5)
   }
 
   var bytes: [UInt8] {
@@ -195,10 +196,11 @@ struct SpaceOneProState: Equatable, Sendable {
     dolbyAudio = body[77] == 1
     ldac = body[78] == 1
     multipointEnabled = body[79] == 1
-    autoPowerOff = AutoPowerOff(enabled: body[80] == 1, durationIndex: Int(body[81]))
+    autoPowerOff = AutoPowerOff(
+      enabled: body[80] == 1, durationIndex: Int(body[81]).clamped(to: 0...7))
     volumeLimit = VolumeLimit(
       enabled: body[82] == 1,
-      decibels: Int(body[83]),
+      decibels: Int(body[83]).clamped(to: 75...100),
       refreshRate: DecibelRefreshRate(rawValue: body[84]) ?? .realTime
     )
     sideTone = body[85] == 1

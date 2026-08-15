@@ -47,7 +47,7 @@ enum SpaceOneProCommands {
   static func autoPowerOff(_ value: AutoPowerOff) -> SoundcorePacket {
     SoundcorePacket(
       command: .init(group: 0x01, action: 0x86),
-      body: [value.enabled ? 1 : 0, UInt8(value.durationIndex.clamped(to: 0...9))]
+      body: [value.enabled ? 1 : 0, UInt8(value.durationIndex.clamped(to: 0...7))]
     )
   }
 

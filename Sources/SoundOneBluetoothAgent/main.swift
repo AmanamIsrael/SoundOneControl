@@ -28,12 +28,12 @@ final class BluetoothAgent: NSObject, IOBluetoothRFCOMMChannelDelegate {
   private func openChannelWithRecovery(device: IOBluetoothDevice) -> IOBluetoothRFCOMMChannel? {
     for cycle in 0..<3 {
       if cycle > 0 {
-        emit("RETRY cycle \(cycle + 1)")
+        emit("STATUS Retrying RFCOMM open (cycle \(cycle + 1)).")
       }
 
       if !device.isConnected() {
         if !waitForReconnect(device: device, timeout: 15) {
-          emit("ERROR Device did not reconnect within 15s.")
+          emit("STATUS Device did not reconnect within 15s.")
           continue
         }
       }
@@ -51,26 +51,12 @@ final class BluetoothAgent: NSObject, IOBluetoothRFCOMMChannelDelegate {
         }
 
         if let openedChannel { _ = openedChannel.close() }
-        emit("ERROR RFCOMM open failed (attempt \(attempt + 1), code \(result)).")
+        emit("STATUS RFCOMM open failed (attempt \(attempt + 1), code \(result)).")
       }
 
-      emit("RECOVERY forcing Bluetooth disconnect/reconnect")
-      device.closeConnection()
-      if !waitForReconnect(device: device, timeout: 20) {
-        emit("ERROR Device did not reconnect after forced disconnect.")
-        continue
-      }
-
-      Thread.sleep(forTimeInterval: 1)
-
-      var openedChannel: IOBluetoothRFCOMMChannel?
-      let result = device.openRFCOMMChannelSync(&openedChannel, withChannelID: 15, delegate: self)
-      if result == kIOReturnSuccess, let ch = openedChannel {
-        emit("RECOVERED after forced reconnect")
-        return ch
-      }
-      if let openedChannel { _ = openedChannel.close() }
-      emit("ERROR RFCOMM still failing after forced reconnect (code \(result)).")
+      // The audio profiles share this Bluetooth device connection. Give macOS a moment before
+      // another RFCOMM cycle instead of forcing a device reconnect that interrupts playback.
+      if cycle < 2 { Thread.sleep(forTimeInterval: 1) }
     }
 
     return nil

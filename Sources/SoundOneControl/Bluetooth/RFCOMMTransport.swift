@@ -129,13 +129,9 @@ final class RFCOMMTransport {
       } catch {
         lastError = error
         if attempt < maxAttempts - 1 {
-          if let device = findDevice() {
-            device.closeConnection()
-            for _ in 0..<20 {
-              if device.isConnected() { break }
-              try await Task.sleep(for: .seconds(1))
-            }
-          }
+          // Retry only the app-owned RFCOMM session. Closing the device connection also tears
+          // down its audio profiles and removes the headphones from macOS sound output.
+          disconnectControlChannel()
           try await Task.sleep(for: baseDelay)
         }
       }

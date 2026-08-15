@@ -153,7 +153,6 @@ private struct SoundSettingsView: View {
               set: controller.setWindNoiseReduction
             ))
         }
-
         Section("Effects") {
           Toggle("Dolby Audio", isOn: Binding(get: { state.dolbyAudio }, set: controller.setDolby))
           Toggle(
@@ -170,6 +169,7 @@ private struct SoundSettingsView: View {
     }
     .formStyle(.grouped)
     .disabled(controller.isApplyingChange)
+    .padding(.top, 8)
   }
 }
 
@@ -255,7 +255,7 @@ private struct EqualizerSettingsView: View {
                   in: -120...120,
                   step: 10
                 )
-                .frame(minWidth: 300)
+                .frame(maxWidth: .infinity)
                 .accessibilityLabel("\(bandNames[index]) hertz")
                 .accessibilityValue(formatAdjustment(draft[index]))
                 Text(formatAdjustment(draft[index]))

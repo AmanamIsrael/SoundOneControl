@@ -252,7 +252,7 @@ final class HeadphoneController: ObservableObject {
     showMenuBarItem = true
     do {
       if !transport.isControlConnected {
-        try await transport.connect()
+        try await transport.connectWithRetry()
       }
       await refreshState()
       if let state, !wasAudioConnected {

@@ -36,7 +36,7 @@ final class RFCOMMTransport {
     }
   }
 
-  private(set) var device: IOBluetoothDevice?
+  private var device: IOBluetoothDevice?
   private var process: Process?
   private var inputPipe: Pipe?
   private var outputPipe: Pipe?
@@ -45,6 +45,7 @@ final class RFCOMMTransport {
   private var responseContinuation: CheckedContinuation<SoundcorePacket, Error>?
   private var timeoutTask: Task<Void, Never>?
   private var isClosingIntentionally = false
+  private var generation = 0
 
   var onChannelClosed: (() -> Void)?
 
@@ -63,9 +64,18 @@ final class RFCOMMTransport {
     guard device.isConnected() else { throw TransportError.deviceDisconnected }
     guard let helperURL = helperExecutableURL() else { throw TransportError.helperMissing }
 
+    if process?.isRunning == true {
+      isClosingIntentionally = true
+      try? writeLine("QUIT")
+      process?.terminate()
+    }
+    cleanUpProcess()
+
     self.device = device
     isClosingIntentionally = false
     outputBuffer = ""
+    generation += 1
+    let myGeneration = generation
 
     let process = Process()
     let inputPipe = Pipe()
@@ -90,7 +100,7 @@ final class RFCOMMTransport {
       let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
       let errorText = String(decoding: errorData, as: UTF8.self).trimmingCharacters(
         in: .whitespacesAndNewlines)
-      Task { @MainActor in self?.helperTerminated(errorText: errorText) }
+      Task { @MainActor in self?.helperTerminated(errorText: errorText, generation: myGeneration) }
     }
 
     do {
@@ -103,15 +113,39 @@ final class RFCOMMTransport {
     try await withCheckedThrowingContinuation { continuation in
       launchContinuation = continuation
       timeoutTask = Task { [weak self] in
-        try? await Task.sleep(for: .seconds(6))
+        try? await Task.sleep(for: .seconds(90))
         guard !Task.isCancelled else { return }
         self?.timeOutLaunch()
       }
     }
   }
 
+  func connectWithRetry(maxAttempts: Int = 2, baseDelay: Duration = .seconds(2)) async throws {
+    var lastError: Error?
+    for attempt in 0..<maxAttempts {
+      do {
+        try await connect()
+        return
+      } catch {
+        lastError = error
+        if attempt < maxAttempts - 1 {
+          if let device = findDevice() {
+            device.closeConnection()
+            for _ in 0..<20 {
+              if device.isConnected() { break }
+              try await Task.sleep(for: .seconds(1))
+            }
+          }
+          try await Task.sleep(for: baseDelay)
+        }
+      }
+    }
+    throw lastError ?? TransportError.channelClosed
+  }
+
   func disconnectControlChannel() {
     isClosingIntentionally = true
+    generation += 1
     timeoutTask?.cancel()
     timeoutTask = nil
     launchContinuation?.resume(throwing: TransportError.channelClosed)
@@ -134,7 +168,7 @@ final class RFCOMMTransport {
     -> SoundcorePacket
   {
     guard responseContinuation == nil else { throw TransportError.requestAlreadyPending }
-    if !isControlConnected { try await connect() }
+    if !isControlConnected { try await connectWithRetry() }
 
     return try await withCheckedThrowingContinuation { continuation in
       responseContinuation = continuation
@@ -216,7 +250,8 @@ final class RFCOMMTransport {
     }
   }
 
-  private func helperTerminated(errorText: String) {
+  private func helperTerminated(errorText: String, generation terminatedGeneration: Int) {
+    guard terminatedGeneration == generation else { return }
     let intentional = isClosingIntentionally
     timeoutTask?.cancel()
     timeoutTask = nil
@@ -267,9 +302,11 @@ final class RFCOMMTransport {
   }
 
   private func findDevice() -> IOBluetoothDevice? {
-    if let device, device.name == Self.supportedName { return device }
-    return (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice])?
+    let paired = (IOBluetoothDevice.pairedDevices() as? [IOBluetoothDevice])?
       .first(where: { $0.name == Self.supportedName })
+    if let paired, paired.isConnected() { return paired }
+    if let device, device.name == Self.supportedName, device.isConnected() { return device }
+    return paired
   }
 
   private func helperExecutableURL() -> URL? {

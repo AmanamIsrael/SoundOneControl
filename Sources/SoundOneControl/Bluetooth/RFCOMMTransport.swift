@@ -232,6 +232,7 @@ final class RFCOMMTransport {
       } else {
         finishResponse(.failure(error))
       }
+      return
     }
   }
 

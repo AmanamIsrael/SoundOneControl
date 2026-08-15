@@ -7,19 +7,12 @@ final class BluetoothAgent: NSObject, IOBluetoothRFCOMMChannelDelegate {
   private let outputLock = NSLock()
 
   func run(address: String) -> Never {
-    guard let device = IOBluetoothDevice(addressString: address), device.isConnected() else {
-      fail("Space One Pro is not connected.")
+    guard let device = IOBluetoothDevice(addressString: address) else {
+      fail("Space One Pro not found.")
     }
 
-    var openedChannel: IOBluetoothRFCOMMChannel?
-    let result = device.openRFCOMMChannelSync(&openedChannel, withChannelID: 15, delegate: self)
-    guard result == kIOReturnSuccess, let openedChannel else {
-      // IOBluetooth can return an error with a partially opened channel after the adapter cycles.
-      // Closing it explicitly lets the next automatic connection attempt start cleanly.
-      if let openedChannel { _ = openedChannel.close() }
-      fail("RFCOMM open failed (\(result)).")
-    }
-    channel = openedChannel
+    channel = openChannelWithRecovery(device: device)
+    guard channel != nil else { fail("RFCOMM channel could not be opened after recovery.") }
     emit("READY")
 
     DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -30,6 +23,65 @@ final class BluetoothAgent: NSObject, IOBluetoothRFCOMMChannelDelegate {
     }
     RunLoop.current.run()
     exit(0)
+  }
+
+  private func openChannelWithRecovery(device: IOBluetoothDevice) -> IOBluetoothRFCOMMChannel? {
+    for cycle in 0..<3 {
+      if cycle > 0 {
+        emit("RETRY cycle \(cycle + 1)")
+      }
+
+      if !device.isConnected() {
+        if !waitForReconnect(device: device, timeout: 15) {
+          emit("ERROR Device did not reconnect within 15s.")
+          continue
+        }
+      }
+
+      for attempt in 0..<4 {
+        if attempt > 0 { Thread.sleep(forTimeInterval: 1.5) }
+
+        var openedChannel: IOBluetoothRFCOMMChannel?
+        let result = device.openRFCOMMChannelSync(&openedChannel, withChannelID: 15, delegate: self)
+        if result == kIOReturnSuccess, let ch = openedChannel {
+          if cycle > 0 || attempt > 0 {
+            emit("RECOVERED after \(cycle) cycles, \(attempt) retries")
+          }
+          return ch
+        }
+
+        if let openedChannel { _ = openedChannel.close() }
+        emit("ERROR RFCOMM open failed (attempt \(attempt + 1), code \(result)).")
+      }
+
+      emit("RECOVERY forcing Bluetooth disconnect/reconnect")
+      device.closeConnection()
+      if !waitForReconnect(device: device, timeout: 20) {
+        emit("ERROR Device did not reconnect after forced disconnect.")
+        continue
+      }
+
+      Thread.sleep(forTimeInterval: 1)
+
+      var openedChannel: IOBluetoothRFCOMMChannel?
+      let result = device.openRFCOMMChannelSync(&openedChannel, withChannelID: 15, delegate: self)
+      if result == kIOReturnSuccess, let ch = openedChannel {
+        emit("RECOVERED after forced reconnect")
+        return ch
+      }
+      if let openedChannel { _ = openedChannel.close() }
+      emit("ERROR RFCOMM still failing after forced reconnect (code \(result)).")
+    }
+
+    return nil
+  }
+
+  private func waitForReconnect(device: IOBluetoothDevice, timeout: Int) -> Bool {
+    for _ in 0..<timeout {
+      if device.isConnected() { return true }
+      Thread.sleep(forTimeInterval: 1)
+    }
+    return device.isConnected()
   }
 
   func rfcommChannelData(

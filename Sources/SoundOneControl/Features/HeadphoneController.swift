@@ -260,7 +260,7 @@ final class HeadphoneController: ObservableObject {
       }
       await runDevelopmentDiagnosticIfNeeded()
     } catch {
-      connectionState = .error(error.localizedDescription)
+      connectionState = .error(userFacingMessage(for: error))
       emitDiagnosticError(error.localizedDescription)
     }
   }
@@ -281,7 +281,7 @@ final class HeadphoneController: ObservableObject {
         await refreshMultipointDevices()
       }
     } catch {
-      connectionState = .error(error.localizedDescription)
+      connectionState = .error(userFacingMessage(for: error))
     }
   }
 
@@ -302,7 +302,7 @@ final class HeadphoneController: ObservableObject {
         await refreshState(refreshesMultipointDevices: refreshesMultipointDevices)
       } catch {
         state = previous
-        connectionState = .error(error.localizedDescription)
+        connectionState = .error(userFacingMessage(for: error))
       }
       isApplyingChange = false
     }
@@ -328,7 +328,7 @@ final class HeadphoneController: ObservableObject {
         _ = try await transport.send(command)
         await completion()
       } catch {
-        connectionState = .error(error.localizedDescription)
+        connectionState = .error(userFacingMessage(for: error))
       }
       isApplyingChange = false
     }
@@ -381,6 +381,13 @@ final class HeadphoneController: ObservableObject {
     {
       FileHandle.standardOutput.write(Data((line + "\n").utf8))
     }
+  }
+
+  private func userFacingMessage(for error: Error) -> String {
+    if error is SoundcoreProtocolError {
+      return "Something went wrong. Try again."
+    }
+    return error.localizedDescription
   }
 
   private func emitDiagnosticError(_ message: String) {

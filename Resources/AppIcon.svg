@@ -1,19 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
   <title id="title">SoundOne Control app icon</title>
-  <desc id="description">Warm dark headphones surrounding a coral sound-control wave.</desc>
+  <desc id="description">A warm cream rounded square with headphones drawn as one continuous ink stroke and a coral signal dot at the center.</desc>
   <defs>
-    <linearGradient id="background" x1="72" y1="48" x2="440" y2="464" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFF3DF"/>
-      <stop offset="1" stop-color="#F6D6B8"/>
-    </linearGradient>
-    <linearGradient id="wave" x1="164" y1="256" x2="348" y2="256" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E76F51"/>
-      <stop offset="1" stop-color="#F4A261"/>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FFF7EA"/>
+      <stop offset="1" stop-color="#F2DDC0"/>
     </linearGradient>
   </defs>
-  <rect x="28" y="28" width="456" height="456" rx="108" fill="url(#background)"/>
-  <path d="M132 264v-36c0-69 55-124 124-124s124 55 124 124v36" fill="none" stroke="#263238" stroke-width="34" stroke-linecap="round"/>
-  <rect x="88" y="238" width="86" height="158" rx="40" fill="#263238"/>
-  <rect x="338" y="238" width="86" height="158" rx="40" fill="#263238"/>
-  <path d="M173 286h26l17-54 32 112 26-84 19 60 17-34h29" fill="none" stroke="url(#wave)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="512" height="512" rx="116" fill="url(#background)"/>
+  <path d="M150 382V282c0-92 46-150 106-150s106 58 106 150v100" fill="none" stroke="#263238" stroke-width="58" stroke-linecap="round"/>
+  <circle cx="256" cy="232" r="26" fill="#E76F51"/>
 </svg>

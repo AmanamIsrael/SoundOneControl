@@ -211,15 +211,21 @@ struct MenuBarContentView: View {
 
   private var connectionPlaceholder: some View {
     VStack(alignment: .leading, spacing: 10) {
-      if case .error(let message) = controller.connectionState {
-        Label(message, systemImage: "exclamationmark.triangle.fill")
-          .foregroundStyle(.orange)
-          .font(.callout)
-      } else {
-        HStack(spacing: 8) {
-          ProgressView().controlSize(.small)
-          Text("Opening the headphone control channel…")
+      // Headphones off is a normal state, not a failure — show only the retry button.
+      if controller.isBluetoothConnected {
+        switch controller.connectionState {
+        case .error(let message):
+          Label(message, systemImage: "exclamationmark.triangle.fill")
+            .foregroundStyle(.orange)
             .font(.callout)
+        case .connecting:
+          HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text("Opening the headphone control channel…")
+              .font(.callout)
+          }
+        case .disconnected, .connected:
+          EmptyView()
         }
       }
       Button("Try Again", action: controller.reconnect)
@@ -228,11 +234,12 @@ struct MenuBarContentView: View {
   }
 
   private var connectionSubtitle: String {
+    guard controller.isBluetoothConnected else { return "Disconnected" }
     switch controller.connectionState {
-    case .connected: "Connected"
-    case .connecting: "Connecting…"
-    case .disconnected: "Disconnected"
-    case .error: "Needs attention"
+    case .connected: return "Connected"
+    case .connecting: return "Connecting…"
+    case .disconnected: return "Disconnected"
+    case .error: return "Needs attention"
     }
   }
 

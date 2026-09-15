@@ -225,7 +225,13 @@ struct MenuBarContentView: View {
               .font(.callout)
           }
         case .disconnected, .connected:
-          EmptyView()
+          // The control channel dropped while Bluetooth is still up; the
+          // monitor reconnects within seconds, so keep progress visible.
+          HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text("Reconnecting to the headphones…")
+              .font(.callout)
+          }
         }
       }
       Button("Try Again", action: controller.reconnect)

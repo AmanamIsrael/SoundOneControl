@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/icon-dark.png">
+    <img src="docs/images/icon.png" width="128" height="128" alt="SoundOne Control icon">
+  </picture>
+</p>
+
 # SoundOne Control
 
 An unofficial, native macOS menu-bar controller for Soundcore Space One Pro (A3062) headphones.
@@ -22,13 +29,13 @@ SoundOne Control talks directly to the headphones over Bluetooth. It is local-on
   - `⌥⌘D` toggles Dolby Audio
   - `⌥⌘E` applies the selected favorite EQ preset
 
-The menu-bar icon is visible only while the headphones are connected.
+The menu-bar icon is visible only while the headphones are connected. Its dot is solid while the control channel is open and hollow while it reconnects.
 
 ## Requirements
 
 - macOS 15 or newer
 - Soundcore Space One Pro (A3062), already paired in System Settings
-- Xcode 16 or newer to build from source
+- Xcode 26 or newer to build from source (it compiles the Icon Composer app icon)
 
 Soundcore permits only one active settings controller. Fully close the Soundcore phone app if SoundOne Control cannot open the control channel. Audio multipoint can remain enabled.
 
@@ -37,11 +44,21 @@ Soundcore permits only one active settings controller. Fully close the Soundcore
 ```sh
 git clone https://github.com/amanamisrael/SoundOneControl.git
 cd SoundOneControl
-./scripts/build-app.sh
-open "dist/SoundOne Control.app"
+./scripts/signing-cert.sh   # once per Mac
+./scripts/build-app.sh --install
+open "/Applications/SoundOne Control.app"
 ```
 
-The build script creates a release build, assembles an app bundle, and applies an ad-hoc signature. An Apple Developer account is not required for local source builds. macOS may ask for Bluetooth and notification permission on first launch.
+The build script creates a release build and assembles `dist/SoundOne Control.app`. Options:
+
+- `--install` copies the app to `/Applications`. Quit the running copy first.
+- `--dmg` also creates `dist/SoundOne Control <version>.dmg`, with an Applications link to drag the app onto. It uses `diskutil image create`, so it needs a macOS release that has that command.
+
+macOS ties Bluetooth access to the app's signature. The script signs with `SOUNDONE_SIGNING_IDENTITY`, or a valid Apple Development or Developer ID certificate. Without one, it uses the self-signed certificate that `scripts/signing-cert.sh` adds to your login keychain. Each of these keeps Bluetooth access from build to build. If none is available, the script signs ad hoc. An Apple Developer account is not required.
+
+A DMG without a Developer ID signature and notarization is for your own Macs. On another Mac, Gatekeeper blocks the first launch. Allow it in System Settings > Privacy & Security.
+
+The app icon is an Icon Composer document at `Resources/AppIcon.icon`. Open it in Icon Composer to edit it.
 
 Run the checks with:
 

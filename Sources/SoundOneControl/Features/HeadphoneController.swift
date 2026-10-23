@@ -12,9 +12,6 @@ final class HeadphoneController: ObservableObject {
     var isBusy: Bool { self == .connecting }
   }
 
-  /// Whether the headphones are linked over Bluetooth, regardless of the control channel.
-  var isBluetoothConnected: Bool { transport.isAudioConnected }
-
   @Published private(set) var connectionState: ConnectionState = .disconnected
   @Published private(set) var state: SpaceOneProState?
   @Published private(set) var isApplyingChange = false
@@ -263,7 +260,9 @@ final class HeadphoneController: ObservableObject {
       }
       await runDevelopmentDiagnosticIfNeeded()
     } catch {
-      connectionState = .error(userFacingMessage(for: error))
+      // Headphones that turn off mid-connect are disconnected, not failing.
+      connectionState =
+        transport.isAudioConnected ? .error(userFacingMessage(for: error)) : .disconnected
       emitDiagnosticError(error.localizedDescription)
     }
   }

@@ -211,41 +211,37 @@ struct MenuBarContentView: View {
 
   private var connectionPlaceholder: some View {
     VStack(alignment: .leading, spacing: 10) {
-      // Headphones off is a normal state, not a failure — show only the retry button.
-      if controller.isBluetoothConnected {
-        switch controller.connectionState {
-        case .error(let message):
-          Label(message, systemImage: "exclamationmark.triangle.fill")
-            .foregroundStyle(.orange)
-            .font(.callout)
-        case .connecting:
-          HStack(spacing: 8) {
-            ProgressView().controlSize(.small)
-            Text("Opening the headphone control channel…")
-              .font(.callout)
-          }
-        case .disconnected, .connected:
-          // The control channel dropped while Bluetooth is still up; the
-          // monitor reconnects within seconds, so keep progress visible.
-          HStack(spacing: 8) {
-            ProgressView().controlSize(.small)
-            Text("Reconnecting to the headphones…")
-              .font(.callout)
-          }
-        }
+      switch controller.connectionState {
+      case .error(let message):
+        Label(message, systemImage: "exclamationmark.triangle.fill")
+          .foregroundStyle(.orange)
+          .font(.callout)
+      case .connecting:
+        progress("Opening the headphone control channel…")
+      case .disconnected, .connected:
+        // The popover exists only while Bluetooth is up, so a missing control
+        // channel here is one the monitor reconnects within seconds.
+        progress("Reconnecting to the headphones…")
       }
       Button("Try Again", action: controller.reconnect)
         .disabled(controller.connectionState.isBusy)
     }
   }
 
+  private func progress(_ message: String) -> some View {
+    HStack(spacing: 8) {
+      ProgressView().controlSize(.small)
+      Text(message)
+        .font(.callout)
+    }
+  }
+
   private var connectionSubtitle: String {
-    guard controller.isBluetoothConnected else { return "Disconnected" }
     switch controller.connectionState {
-    case .connected: return "Connected"
-    case .connecting: return "Connecting…"
-    case .disconnected: return "Disconnected"
-    case .error: return "Needs attention"
+    case .connected: "Connected"
+    case .connecting: "Connecting…"
+    case .disconnected: "Reconnecting…"
+    case .error: "Needs attention"
     }
   }
 

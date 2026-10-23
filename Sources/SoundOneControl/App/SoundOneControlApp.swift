@@ -12,36 +12,6 @@ struct SoundOneControlApp: App {
   }
 }
 
-enum MenuBarIcon {
-  static let image: NSImage = {
-    let size = NSSize(width: 18, height: 18)
-    let image = NSImage(size: size, flipped: false) { rect in
-      let path = NSBezierPath()
-      path.lineWidth = 1.7
-      path.lineCapStyle = .round
-      path.move(to: NSPoint(x: 3.5, y: 8))
-      path.curve(
-        to: NSPoint(x: 14.5, y: 8),
-        controlPoint1: NSPoint(x: 3.5, y: 15),
-        controlPoint2: NSPoint(x: 14.5, y: 15)
-      )
-      path.move(to: NSPoint(x: 3.5, y: 8))
-      path.line(to: NSPoint(x: 3.5, y: 4))
-      path.move(to: NSPoint(x: 14.5, y: 8))
-      path.line(to: NSPoint(x: 14.5, y: 4))
-      path.stroke()
-
-      NSBezierPath(roundedRect: NSRect(x: 1.5, y: 3, width: 4, height: 6), xRadius: 2, yRadius: 2)
-        .fill()
-      NSBezierPath(roundedRect: NSRect(x: 12.5, y: 3, width: 4, height: 6), xRadius: 2, yRadius: 2)
-        .fill()
-      return true
-    }
-    image.isTemplate = true
-    return image
-  }()
-}
-
 private final class AppDelegate: NSObject, NSApplicationDelegate {
   private var statusItemCoordinator: StatusItemCoordinator?
 
@@ -92,6 +62,11 @@ private final class StatusItemCoordinator: NSObject {
       .removeDuplicates()
       .receive(on: RunLoop.main)
       .sink { [weak self] isVisible in self?.setStatusItemVisible(isVisible) }
+      .store(in: &cancellables)
+    controller.$connectionState
+      .removeDuplicates()
+      .receive(on: RunLoop.main)
+      .sink { [weak self] state in self?.updateStatusItemImage(for: state) }
       .store(in: &cancellables)
     setStatusItemVisible(controller.showMenuBarItem)
   }
@@ -179,18 +154,22 @@ private final class StatusItemCoordinator: NSObject {
   private func setStatusItemVisible(_ isVisible: Bool) {
     if isVisible, statusItem == nil {
       let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-      item.button?.image = MenuBarIcon.image
       item.button?.imagePosition = .imageOnly
       item.button?.toolTip = "SoundOne Control"
       item.button?.target = self
       item.button?.action = #selector(handleStatusItemClick(_:))
       item.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
       statusItem = item
+      updateStatusItemImage(for: controller.connectionState)
     } else if !isVisible, let statusItem {
       popover.performClose(nil)
       NSStatusBar.system.removeStatusItem(statusItem)
       self.statusItem = nil
     }
+  }
+
+  private func updateStatusItemImage(for state: HeadphoneController.ConnectionState) {
+    statusItem?.button?.image = state == .connected ? MenuBarIcon.filled : MenuBarIcon.outlined
   }
 }
 
